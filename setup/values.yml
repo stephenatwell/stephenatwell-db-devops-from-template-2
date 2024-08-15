@@ -1,0 +1,2 @@
+secret: <+stage.variables.secret>
+namespace: all-dbs #<+serviceVariables.namespace>

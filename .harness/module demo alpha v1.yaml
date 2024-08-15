@@ -1,0 +1,255 @@
+pipeline:
+  projectIdentifier: default_project
+  orgIdentifier: default
+  stages:
+    - stage:
+        name: DB Migrate
+        identifier: DB_Migrate
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: Liquibase Update
+                  identifier: Liquibase_Update
+                  steps:
+                    - step:
+                        type: Plugin
+                        name: History
+                        identifier: history_before_run
+                        spec:
+                          connectorRef: Dockerhub
+                          image: plugins/drone-liquibase:latest
+                          settings:
+                            liquibase_url: <+stage.variables.server_jdbc_url>
+                            liquibase_username: <+pipeline.variables.user>
+                            liquibase_password: <+secrets.getValue("mysql_sa_password")>
+                            liquibase_format: TABULAR
+                            command: history
+                          imagePullPolicy: Always
+                        description: Run the liquibase drone plugin
+                    - step:
+                        type: DBSchemaApply
+                        name: DBSchemaApply_1
+                        identifier: DBSchemaApply_1
+                        spec:
+                          connectorRef: account.harnessImage
+                          resources:
+                            limits:
+                              memory: 1Gi
+                              cpu: "0.5"
+                          dbSchema: db_devops_demo
+                          dbInstance: ms_sql
+                          tag: <+stage.variables.tag>
+                        timeout: 10m
+                    - step:
+                        type: Plugin
+                        name: History
+                        identifier: history
+                        spec:
+                          connectorRef: Dockerhub
+                          image: plugins/drone-liquibase:latest
+                          settings:
+                            liquibase_url: <+stage.variables.server_jdbc_url>
+                            liquibase_username: <+pipeline.variables.user>
+                            liquibase_password: <+secrets.getValue("mysql_sa_password")>
+                            liquibase_format: TABULAR
+                            command: history
+                          imagePullPolicy: Always
+                        description: Run the liquibase drone plugin
+                  stepGroupInfra:
+                    type: KubernetesDirect
+                    spec:
+                      connectorRef: k8s_cluster_try_3
+                      namespace: yogeshc
+                      initTimeout: 10m
+                  when:
+                    stageStatus: Success
+                    condition: <+stage.variables.rollback_tag> == ""
+              - stepGroup:
+                  name: Liquibase Rollback
+                  identifier: Liquibase_Rollback
+                  steps:
+                    - step:
+                        type: Plugin
+                        name: History
+                        identifier: history_before_run
+                        spec:
+                          connectorRef: Dockerhub
+                          image: plugins/drone-liquibase:latest
+                          settings:
+                            liquibase_url: <+stage.variables.server_jdbc_url>
+                            liquibase_username: <+pipeline.variables.user>
+                            liquibase_password: <+secrets.getValue("mysql_sa_password")>
+                            liquibase_format: TABULAR
+                            command: history
+                          imagePullPolicy: Always
+                        description: Run the liquibase drone plugin
+                    - step:
+                        type: DBSchemaRollback
+                        name: DBSchemaRollback_1
+                        identifier: DBSchemaRollback_1
+                        spec:
+                          connectorRef: account.harnessImage
+                          dbSchema: db_devops_demo
+                          tag: <+stage.variables.rollback_tag>
+                          dbInstance: ms_sql
+                          resources:
+                            limits:
+                              memory: 1Gi
+                              cpu: "0.5"
+                        timeout: 10m
+                    - step:
+                        type: Plugin
+                        name: History
+                        identifier: history
+                        spec:
+                          connectorRef: Dockerhub
+                          image: plugins/drone-liquibase:latest
+                          settings:
+                            liquibase_url: <+stage.variables.server_jdbc_url>
+                            liquibase_username: <+pipeline.variables.user>
+                            liquibase_password: <+secrets.getValue("mysql_sa_password")>
+                            liquibase_format: TABULAR
+                            command: history
+                          imagePullPolicy: Always
+                        description: Run the liquibase drone plugin
+                  stepGroupInfra:
+                    type: KubernetesDirect
+                    spec:
+                      connectorRef: k8s_cluster_try_3
+                      namespace: yogeshc
+                      initTimeout: 10m
+                  when:
+                    stageStatus: Success
+                    condition: <+stage.variables.rollback_tag> != ""
+            rollbackSteps: []
+          serviceDependencies: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors: []
+              action:
+                type: Abort
+        variables:
+          - name: rollback_tag
+            type: String
+            description: Specify this if you wish to rollback to the particular tag
+            required: false
+            value: <+input>
+          - name: branch
+            type: String
+            description: ""
+            required: true
+            value: main
+          - name: changelogfile
+            type: String
+            description: ""
+            required: false
+            value: example-changelog.yaml
+          - name: tag
+            type: String
+            description: Argument to Liquibase Tag Command
+            required: false
+            value: <+input>
+          - name: server_jdbc_url
+            type: String
+            description: JDBC URL of the target server
+            required: false
+            value: <+pipeline.variables.server_jdbc_url>
+          - name: arch
+            type: String
+            description: ""
+            required: false
+            value: latest
+    - stage:
+        name: notify of change
+        identifier: notify_of_change
+        description: ""
+        type: Custom
+        spec:
+          execution:
+            steps:
+              - step:
+                  type: ShellScript
+                  name: ShellScript_1
+                  identifier: ShellScript_1
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    source:
+                      type: Inline
+                      spec:
+                        script: |+
+                          #date -d"$start_time" %1$tFT%1$tT%1$tZ
+                          #!/bin/bash
+
+                          # Convert the Unix timestamp to seconds (since it is in milliseconds)
+                          timestamp_seconds=$(($start_time / 1000))
+
+                          # Format the date in the desired format
+                          formatted_date=$(date -u -d @"$timestamp_seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ")
+
+                          # Output the formatted date
+                          echo $formatted_date
+
+                          # Convert the Unix timestamp to seconds (since it is in milliseconds)
+                          end_timestamp_seconds=$(($end_time / 1000))
+
+                          # Format the date in the desired format
+                          end_formatted_date=$(date -u -d @"$end_timestamp_seconds" +"%Y-%m-%dT%H:%M:%S.%3NZ")
+
+                          # Output the formatted date
+                          echo $end_formatted_date
+
+
+
+                          curl -X POST -d "[
+                            {
+                              \"startDateTime\": \"$formatted_date\",    \"databaseTargetId\": 1,
+                              \"eventTypeId\": 2,
+                              \"title\": \"$title\",    \"endDateTime\": \"$end_formatted_date\",    \"colourCode\": \"#FF0000\",    \"description\": \"\",    \"detailsUrl\": \"$url\"}]" http://34.134.231.119:9090/archiver/rest/v1/event -H "Content-Type: application/json"
+
+
+
+                    environmentVariables:
+                      - name: start_time
+                        type: String
+                        value: <+pipeline.startTs>
+                      - name: end_time
+                        type: String
+                        value: <+pipeline.stages.DB_Migrate.endTs>
+                      - name: title
+                        type: String
+                        value: <+pipeline.name>-<+pipeline.executionId>
+                      - name: url
+                        type: String
+                        value: <+pipeline.executionUrl>
+                    outputVariables:
+                      - name: formatted_date
+                        type: String
+                        value: formatted_date
+                      - name: end_time
+                        type: String
+                        value: end_formatted_date
+                  timeout: 10m
+        tags: {}
+        when:
+          pipelineStatus: Success
+          condition: "false"
+  tags:
+    demo: ""
+  variables:
+    - name: server_jdbc_url
+      type: String
+      description: ""
+      required: false
+      value: jdbc:sqlserver://<+variable.sql_server_ip_address>;database=MyTestDataBase;trustServerCertificate=true
+    - name: user
+      type: String
+      description: ""
+      required: false
+      value: <+secrets.getValue("mysql_sa_user")>
+  identifier: POC_Drone_Plugin_Clone
+  name: Module Demo - Alpha v1

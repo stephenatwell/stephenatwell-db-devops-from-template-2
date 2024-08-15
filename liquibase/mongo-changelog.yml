@@ -1,0 +1,53 @@
+databaseChangeLog: 
+  - changeSet:
+      id: satwell:1
+      author: satwell@harness.io
+      comment: I really want another column 
+      changes:
+        - createCollection:
+            collectionName: pets
+            options:
+              validator:
+                  $jsonSchema:
+                    bsonType: object
+                    required:
+                    - name
+                    - species
+                  properties:
+                    name:
+                      bsonType: string
+                      description: "The Name"
+                    species:
+                      bsonType: string
+                      description: "cat, dog, or other"                    
+              validationAction: warn
+              validationLevel: strict
+  - changeSet:
+      id: satwell:13
+      author: satwell@harness.io
+      context: example-context
+      comment: add an index
+      changes:
+        - createIndex:
+            collectionName: pets
+            keys:
+              - name
+  - changeSet:
+      id: satwell:13
+      author: satwell@harness.io
+      context: example-context
+      comment: I really want another column 
+      changes:
+        - createIndex:
+            collectionName: pets
+            keys:
+              - name
+            
+
+
+
+
+
+                 
+
+              
