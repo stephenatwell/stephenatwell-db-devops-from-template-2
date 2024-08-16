@@ -23,7 +23,7 @@ pipeline:
                               connectorRef: account.harnessImage
                               resources:
                                 limits:
-                                  memory: 2Gi
+                                  memory: 1.5Gi
                                   cpu: "1"
                               dbSchema: db_devops_demo
                               dbInstance: staging
@@ -40,7 +40,7 @@ pipeline:
                               connectorRef: account.harnessImage
                               resources:
                                 limits:
-                                  memory: 2Gi
+                                  memory: 1.5Gi
                                   cpu: "1"
                               dbSchema: db_devops_demo
                               dbInstance: productionus
@@ -71,7 +71,7 @@ pipeline:
                               connectorRef: account.harnessImage
                               resources:
                                 limits:
-                                  memory: 2Gi
+                                  memory: 1.5Gi
                                   cpu: "1"
                               dbSchema: db_devops_demo
                               dbInstance: staging
@@ -88,7 +88,7 @@ pipeline:
                               connectorRef: account.harnessImage
                               resources:
                                 limits:
-                                  memory: 2Gi
+                                  memory: 1.5Gi
                                   cpu: "1"
                               dbSchema: db_devops_demo
                               dbInstance: productionus
