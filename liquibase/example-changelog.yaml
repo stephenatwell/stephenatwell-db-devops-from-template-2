@@ -303,7 +303,7 @@ databaseChangeLog:
   - changeSet:
       id: satwell:19
       author: satwell
-      ignore: true
+      ignore: false
       labels: tag_1 
       context: example-context
       comment: example comment
