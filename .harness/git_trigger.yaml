@@ -1,0 +1,22 @@
+inputSet:
+  name: git trigger
+  identifier: git_trigger
+  orgIdentifier: default
+  projectIdentifier: default_project
+  pipeline:
+    identifier: Module_Demo_Betamultienv
+    stages:
+      - stage:
+          identifier: DB_Migrate
+          type: Custom
+          variables:
+            - name: rollback_tag
+              type: String
+              value: <+input>
+            - name: tag
+              type: String
+              value: <+trigger.tag>
+    variables:
+      - name: trigger_branch
+        type: String
+        value: <+trigger.targetBranch>
