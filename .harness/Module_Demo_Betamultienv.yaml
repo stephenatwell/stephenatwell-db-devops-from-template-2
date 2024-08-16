@@ -57,7 +57,7 @@ pipeline:
                       initTimeout: 10m
                   when:
                     stageStatus: Success
-                    condition: "<+stage.variables.rollback_tag> == \"\" OR <+stage.variables.rollback_tag> == \"null\" "
+                    condition: "<+stage.variables.rollback_tag> == \"\" || <+stage.variables.rollback_tag> == \"null\" "
               - stepGroup:
                   name: Liquibase Rollback
                   identifier: Liquibase_Rollback
@@ -105,7 +105,7 @@ pipeline:
                       initTimeout: 10m
                   when:
                     stageStatus: Success
-                    condition: "<+stage.variables.rollback_tag> != \"\" AND <+stage.variables.rollback_tag> != \"null\" "
+                    condition: "<+stage.variables.rollback_tag> != \"\" && <+stage.variables.rollback_tag> != \"null\" "
             rollbackSteps: []
           serviceDependencies: []
         tags: {}
