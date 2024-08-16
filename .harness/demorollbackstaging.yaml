@@ -1,0 +1,22 @@
+inputSet:
+  name: demo-rollback-staging
+  identifier: demorollbackstaging
+  orgIdentifier: default
+  projectIdentifier: default_project
+  pipeline:
+    identifier: Module_Demo_Betamultienv
+    stages:
+      - stage:
+          identifier: DB_Migrate
+          type: Custom
+          variables:
+            - name: rollback_tag
+              type: String
+              value: 81afbd898b561a0b56237f421266ad53069f920a
+            - name: tag
+              type: String
+              value: <+input>
+    variables:
+      - name: trigger_branch
+        type: String
+        value: staging
