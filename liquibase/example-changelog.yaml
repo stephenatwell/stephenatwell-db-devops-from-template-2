@@ -321,3 +321,4 @@ databaseChangeLog:
                   name: aggression_level
             indexName: idx_wild_animals_aggression_level                                        
 
+
